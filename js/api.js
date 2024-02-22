@@ -47,22 +47,20 @@ async function getProjects() {
         // 프로젝트 선택 시 프로젝트 상세 및 레이어 조회하는 이벤트 추가
         select.addEventListener('change', async (event) => {
             const selectedPid = event.target.value;
-            const projectData = await getProject(selectedPid);
-            console.log(projectData);
 
-            const layersData = await getLayers(selectedPid);
-            console.log(layersData);
+            if (selectedPid !== "0") {
+                const projectData = await getProject(selectedPid);
+                console.log(projectData);
 
-            displayLayers(layersData);
+                const layersData = await getLayers(selectedPid);
+                console.log(layersData);
 
-            // 초기 '전체 레이어' 버튼 체크
-            toggleAllLayersInput.checked = true;
-            updateOtherLayerCheckboxes();
+                displayLayers(layersData);
 
-            // 만약 pid가 0이면(null) '전체 레이어' 버튼 체크 해제
-            if (selectedPid === '0') {
-                toggleAllLayersInput.checked = false;
+                // 초기 '전체 레이어' 버튼 체크
+                toggleAllLayersInput.checked = true;
                 updateOtherLayerCheckboxes();
+
             }
         });
 
