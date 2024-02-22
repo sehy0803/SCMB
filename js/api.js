@@ -1,6 +1,25 @@
 const apiKey = "bd49048a-6440-4f3b-8fa4-cbdc42986059";
 const baseUrl = "http://220.126.8.143:53332/api/v1"
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0MWRlZDViZS1lNjFhLTRkMGUtODVhNC05YThhZWYzYjU5OGEiLCJpZCI6MTk2ODU5LCJpYXQiOjE3MDg0ODg2NzN9.YwZ1O0jamr4Xjgv5FFazklk5EoPRUdOwlPAozSqGuxI';
+let viewer;
+
+// '전체 레이어' 버튼에 이벤트리스너 추가
+const toggleAllLayersInput = document.getElementById('cont01');
+
+toggleAllLayersInput.addEventListener('change', function () {
+    const allLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]');
+    allLayerCheckboxes.forEach(checkbox => {
+        checkbox.checked = toggleAllLayersInput.checked;
+    });
+});
+
+// 레이어 버튼들의 체크박스 업데이트
+function updateOtherLayerCheckboxes() {
+    const otherLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]:not(#cont01)');
+    otherLayerCheckboxes.forEach(checkbox => {
+        checkbox.checked = toggleAllLayersInput.checked;
+    });
+}
 
 // 프로젝트 목록 조회
 async function getProjects() {
@@ -35,6 +54,16 @@ async function getProjects() {
             console.log(layersData);
 
             displayLayers(layersData);
+
+            // 초기 '전체 레이어' 버튼 체크
+            toggleAllLayersInput.checked = true;
+            updateOtherLayerCheckboxes();
+
+            // 만약 pid가 0이면(null) '전체 레이어' 버튼 체크 해제
+            if (selectedPid === '0') {
+                toggleAllLayersInput.checked = false;
+                updateOtherLayerCheckboxes();
+            }
         });
 
         return projectsData;
@@ -132,8 +161,9 @@ function displayLayers(layersData) {
     layer_container.innerHTML = '';
     const layerGroups = {};
 
-    // '전체 레이어' 버튼에 이벤트리스너 추가
     const toggleAllLayersInput = document.getElementById('cont01');
+    toggleAllLayersInput.checked = true;
+    // '전체 레이어' 버튼에 이벤트리스너 추가
     toggleAllLayersInput.addEventListener('change', function () {
         const allLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]');
         allLayerCheckboxes.forEach(checkbox => {
