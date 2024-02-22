@@ -97,7 +97,20 @@ async function setCesium(selectedPid) {
         }
     });
 
+    const globe = viewer.scene.globe;
+    globe.translucency.enabled = true; // 지구 표면 투명하게
+    globe.translucency.frontFaceAlphaByDistance = new Cesium.NearFarScalar(
+        400.0, // 깊이 조절
+        0.0,
+        0.0, // 밝기 조절
+        1.0
+    );
+    globe.translucency.backFaceAlphaByDistance = true;
+
     const layersData = await getLayers(selectedPid);
+
+    // 타일셋과 레이어를 연결하는 객체
+    const layerTilesetMap = {};
 
     // 타일셋 추가
     for (const layer of layersData) {
@@ -105,6 +118,10 @@ async function setCesium(selectedPid) {
             try {
                 const tileset = await Cesium.Cesium3DTileset.fromUrl(layer.lurl);
                 viewer.scene.primitives.add(tileset);
+
+                // 레이어와 타일셋을 연결
+                layerTilesetMap[layer.lid] = tileset;
+
                 console.log(`타일셋 추가 완료: ${layer.lurl}`);
             } catch (error) {
                 console.error(`Error creating tileset: ${error}`);
@@ -112,15 +129,21 @@ async function setCesium(selectedPid) {
         }
     }
 
-    const globe = viewer.scene.globe;
-    globe.translucency.enabled = true;
-    globe.translucency.frontFaceAlphaByDistance = new Cesium.NearFarScalar(
-        400.0, // 깊이 조절
-        0.0,
-        3000.0, // 밝기 조절
-        1.0
-    );
-    globe.translucency.backFaceAlphaByDistance = true;
+    // 레이어 체크박스에 이벤트 추가
+    layersData.forEach(layer => {
+        if (layer.llv === 2) {
+            const checkbox = document.getElementById(layer.lid);
+            if (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    // 체크박스 상태에 따라 타일셋 활성화 또는 비활성화
+                    const tileset = layerTilesetMap[layer.lid];
+                    if (tileset) {
+                        tileset.show = checkbox.checked;
+                    }
+                });
+            }
+        }
+    });
 }
 
 // LINESTRING Z 문자열을 Cesium.Cartesian3 배열로 변환
