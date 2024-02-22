@@ -1,25 +1,6 @@
 const apiKey = "bd49048a-6440-4f3b-8fa4-cbdc42986059";
 const baseUrl = "http://220.126.8.143:53332/api/v1"
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0MWRlZDViZS1lNjFhLTRkMGUtODVhNC05YThhZWYzYjU5OGEiLCJpZCI6MTk2ODU5LCJpYXQiOjE3MDg0ODg2NzN9.YwZ1O0jamr4Xjgv5FFazklk5EoPRUdOwlPAozSqGuxI';
-let viewer;
-
-// '전체 레이어' 버튼에 이벤트리스너 추가
-const toggleAllLayersInput = document.getElementById('cont01');
-
-toggleAllLayersInput.addEventListener('change', function () {
-    const allLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]');
-    allLayerCheckboxes.forEach(checkbox => {
-        checkbox.checked = toggleAllLayersInput.checked;
-    });
-});
-
-// 레이어 버튼들의 체크박스 업데이트
-function updateOtherLayerCheckboxes() {
-    const otherLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]:not(#cont01)');
-    otherLayerCheckboxes.forEach(checkbox => {
-        checkbox.checked = toggleAllLayersInput.checked;
-    });
-}
 
 // 프로젝트 목록 조회
 async function getProjects() {
@@ -61,6 +42,7 @@ async function getProjects() {
                 toggleAllLayersInput.checked = true;
                 updateOtherLayerCheckboxes();
 
+                setCesium(selectedPid);
             }
         });
 
@@ -84,43 +66,61 @@ async function getProject(pid) {
         }
 
         const projectData = await response.json();
-
-        // pbv 값으로 카메라 좌표 설정
-        const lineStringZ = projectData.pbv;
-        const coordinates = parseLineStringZ(lineStringZ);
-
-        const startLocation = coordinates[0];
-        const endLocation = coordinates[coordinates.length - 1];
-
-        console.log(`coordinates :${startLocation}`);
-        console.log(`coordinates :${endLocation}`);
-
-        // Cesium Viewer를 초기화
-        if (viewer && !viewer.isDestroyed()) {
-            viewer.destroy();
-        }
-
-        viewer = new Cesium.Viewer('cesiumContainer', {
-            terrain: Cesium.Terrain.fromWorldTerrain(),
-        });
-
-        // 카메라 이동
-        viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(...startLocation),
-            orientation: {
-                heading: Cesium.Math.toRadians(0.0),
-                pitch: Cesium.Math.toRadians(-15.0),
-            }
-        });
-
-        // Cesium OSM Buildings 레이어 추가
-        const buildingTileset = await Cesium.createOsmBuildingsAsync();
-        viewer.scene.primitives.add(buildingTileset);
-
         return projectData;
     } catch (error) {
         console.error('오류:', error);
     }
+}
+
+// 세슘 설정
+async function setCesium(selectedPid) {
+    const projectData = await getProject(selectedPid);
+
+    // pbv 값으로 카메라 좌표 설정
+    const lineStringZ = projectData.pbv;
+    const coordinates = parseLineStringZ(lineStringZ);
+
+    const startLocation = coordinates[0];
+    // const endLocation = coordinates[coordinates.length - 1];
+
+    // 뷰어 초기화
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+        terrain: Cesium.Terrain.fromWorldTerrain(),
+    });
+
+    // 카메라 이동
+    viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(...startLocation),
+        orientation: {
+            heading: Cesium.Math.toRadians(0.0),
+            pitch: Cesium.Math.toRadians(-15.0),
+        }
+    });
+
+    const layersData = await getLayers(selectedPid);
+
+    // 타일셋 추가
+    for (const layer of layersData) {
+        if (layer.llv === 2 && layer.lurl) {
+            try {
+                const tileset = await Cesium.Cesium3DTileset.fromUrl(layer.lurl);
+                viewer.scene.primitives.add(tileset);
+                console.log(`타일셋 추가 완료: ${layer.lurl}`);
+            } catch (error) {
+                console.error(`Error creating tileset: ${error}`);
+            }
+        }
+    }
+
+    const globe = viewer.scene.globe;
+    globe.translucency.enabled = true;
+    globe.translucency.frontFaceAlphaByDistance = new Cesium.NearFarScalar(
+        400.0, // 깊이 조절
+        0.0,
+        3000.0, // 밝기 조절
+        1.0
+    );
+    globe.translucency.backFaceAlphaByDistance = true;
 }
 
 // LINESTRING Z 문자열을 Cesium.Cartesian3 배열로 변환
@@ -266,6 +266,23 @@ function displayLayers(layersData) {
     });
 }
 
+// '전체 레이어' 버튼에 이벤트리스너 추가
+const toggleAllLayersInput = document.getElementById('cont01');
+toggleAllLayersInput.addEventListener('change', function () {
+    const allLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]');
+    allLayerCheckboxes.forEach(checkbox => {
+        checkbox.checked = toggleAllLayersInput.checked;
+    });
+});
+
+// 레이어 버튼들의 체크박스 업데이트
+function updateOtherLayerCheckboxes() {
+    const otherLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]:not(#cont01)');
+    otherLayerCheckboxes.forEach(checkbox => {
+        checkbox.checked = toggleAllLayersInput.checked;
+    });
+}
+
 // 공간객체 물성 정보 조회
 async function getModels(modelid, pid) {
     let url = `${baseUrl}/models/${modelid}?pid=${pid}&apikey=${apiKey}`;
@@ -287,11 +304,6 @@ async function getModels(modelid, pid) {
 
 (async () => {
     try {
-        // 초기에는 지구만 표시
-        viewer = new Cesium.Viewer('cesiumContainer', {
-            terrain: Cesium.Terrain.fromWorldTerrain(),
-        });
-
         const projects = await getProjects();
         console.log(projects);
     } catch (error) {
