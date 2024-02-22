@@ -85,10 +85,17 @@ async function getLayers(pid) {
 // 레이어 목록을 화면에 표시
 function displayLayers(layersData) {
     const layer_container = document.querySelector('.layer_container');
-
     layer_container.innerHTML = '';
-
     const layerGroups = {};
+
+    // '전체 레이어' 버튼에 이벤트리스너 추가
+    const toggleAllLayersInput = document.getElementById('cont01');
+    toggleAllLayersInput.addEventListener('change', function () {
+        const allLayerCheckboxes = document.querySelectorAll('.layer_container input[type="checkbox"]');
+        allLayerCheckboxes.forEach(checkbox => {
+            checkbox.checked = toggleAllLayersInput.checked;
+        });
+    })
 
     layersData.forEach(layer => {
         const layer_group = document.createElement('div');
@@ -136,6 +143,14 @@ function displayLayers(layersData) {
 
             layerGroups[layer.lid] = layer_group;
             layer_container.appendChild(layer_group);
+
+            // 상위 레이어 버튼에 이벤트리스너 추가
+            input.addEventListener('change', function () {
+                const lowerLayerCheckboxes = document.querySelectorAll(`.layer_container input[type="checkbox"][data-parent="${layer.lid}"]`);
+                lowerLayerCheckboxes.forEach(checkbox => {
+                    checkbox.checked = input.checked;
+                });
+            });
         }
 
         if (layer.llv == 2) {
@@ -160,6 +175,7 @@ function displayLayers(layersData) {
             const input = document.createElement('input');
             input.id = layer.lid;
             input.type = 'checkbox';
+            input.setAttribute('data-parent', layer.ulid);
 
             const label = document.createElement('label');
             label.htmlFor = layer.lid;
@@ -174,6 +190,7 @@ function displayLayers(layersData) {
                 upperLayerGroup.appendChild(lowerLayer);
             }
         }
+
     });
 }
 
