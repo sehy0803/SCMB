@@ -7,7 +7,7 @@ Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOi
     });
 
     // 카메라를 주어진 경도(longitude), 위도(latitude), 높이(height)로 이동
-    viewer.camera.setView({
+    viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(127.424495891002, 36.71181837672268, 3000),
         orientation: {
             heading: Cesium.Math.toRadians(0.0),
