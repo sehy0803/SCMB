@@ -4,7 +4,7 @@ const baseUrl = "http://220.126.8.143:53332/api/v1"
 // 프로젝트 목록 조회
 async function getProjects() {
     let url = `${baseUrl}/projects?apikey=${apiKey}`;
-    
+
     try {
         const response = await fetch(url, {
             method: "GET",
@@ -35,7 +35,7 @@ async function getProjects() {
 
             displayLayers(layersData);
         });
-        
+
         return projectsData;
     } catch (error) {
         console.error('오류:', error);
@@ -45,7 +45,7 @@ async function getProjects() {
 // 프로젝트 상세 조회
 async function getProject(pid) {
     let url = `${baseUrl}/projects/${pid}?apikey=${apiKey}`;
-    
+
     try {
         const response = await fetch(url, {
             method: "GET",
@@ -65,7 +65,7 @@ async function getProject(pid) {
 // 레이어 정보 조회
 async function getLayers(pid) {
     let url = `${baseUrl}/layers?pid=${pid}&apikey=${apiKey}`;
-    
+
     try {
         const response = await fetch(url, {
             method: "GET",
@@ -128,7 +128,14 @@ function displayLayers(layersData) {
             button.appendChild(label);
 
             layer_group.appendChild(upperLayer);
+
+            const hr = document.createElement('hr');
+            hr.className = 'coordinates05';
+
+            layer_group.appendChild(hr);
+
             layerGroups[layer.lid] = layer_group;
+            layer_container.appendChild(layer_group);
         }
 
         if (layer.llv == 2) {
@@ -167,15 +174,13 @@ function displayLayers(layersData) {
                 upperLayerGroup.appendChild(lowerLayer);
             }
         }
-
-        layer_container.appendChild(layer_group);
     });
 }
 
 // 공간객체 물성 정보 조회
 async function getModels(modelid, pid) {
     let url = `${baseUrl}/models/${modelid}?pid=${pid}&apikey=${apiKey}`;
-    
+
     try {
         const response = await fetch(url, {
             method: "GET",
@@ -185,7 +190,7 @@ async function getModels(modelid, pid) {
             throw new Error(`네트워크 오류: ${response.status}`);
         }
         return await response.json();
-        
+
     } catch (error) {
         console.error('오류:', error);
     }
