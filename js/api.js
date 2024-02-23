@@ -2,7 +2,7 @@ const apiKey = "bd49048a-6440-4f3b-8fa4-cbdc42986059";
 const baseUrl = "http://220.126.8.143:53332/api/v1"
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0MWRlZDViZS1lNjFhLTRkMGUtODVhNC05YThhZWYzYjU5OGEiLCJpZCI6MTk2ODU5LCJpYXQiOjE3MDg0ODg2NzN9.YwZ1O0jamr4Xjgv5FFazklk5EoPRUdOwlPAozSqGuxI';
 let viewer;
-
+/* 정보 조회 */
 // 프로젝트 목록 조회
 async function getProjects() {
     let url = `${baseUrl}/projects?apikey=${apiKey}`;
@@ -39,6 +39,9 @@ async function getProjects() {
 
                 // 지도 생성
                 setCesium(selectedPid);
+
+                const ugData = await getUnderground(selectedPid);
+                console.log("지하공동구 정보", JSON.stringify(ugData));
             }
         });
 
@@ -86,6 +89,7 @@ async function setCesium(selectedPid) {
     // 뷰어 초기화
     viewer = new Cesium.Viewer('cesiumContainer', {
         terrain: Cesium.Terrain.fromWorldTerrain(),
+        // infoBox: false
     });
 
     // 지구 투명도 설정
@@ -117,7 +121,7 @@ async function setCesium(selectedPid) {
                 const tileset = await Cesium.Cesium3DTileset.fromUrl(layer.lurl);
                 viewer.scene.primitives.add(tileset);
                 layerTilesetMap[layer.lid] = tileset;
-                console.log(`타일셋 추가 완료: ${layer.lnm}`);
+                console.log(`타일셋 추가 - ${layer.lnm} ${layer.lurl}`);
             } catch (error) {
                 console.error(`타일셋 추가 오류: ${error}`);
             }
@@ -126,6 +130,22 @@ async function setCesium(selectedPid) {
 
     // 레이어 버튼에 이벤트리스너 추가
     addLayerEventListeners(layersData, layerTilesetMap);
+
+    // 뷰어에 클릭 핸들러 추가
+    addClickHandler(viewer);
+
+}
+
+// 뷰어에 클릭 핸들러 추가
+function addClickHandler(viewer) {
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction(function onLeftClick(movement) {
+        let pickedFeature = viewer.scene.pick(movement.position);
+        if (Cesium.defined(pickedFeature)) {
+            const modelid = pickedFeature.getProperty('modelid');
+            console.log('modelid:', modelid);
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 }
 
 // 레이어 버튼에 이벤트리스너 추가
@@ -342,8 +362,27 @@ async function getModels(modelid, pid) {
         if (!response.ok) {
             throw new Error(`네트워크 오류: ${response.status}`);
         }
-        return await response.json();
+        const modelsData = await response.json();
+        return modelsData;
+    } catch (error) {
+        console.error('오류:', error);
+    }
+}
 
+// 지하공동구 정보 조회
+async function getUnderground(pid) {
+    let url = `${baseUrl}/projects/${pid}/prop?apikey=${apiKey}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+        });
+
+        if (!response.ok) {
+            throw new Error(`네트워크 오류: ${response.status}`);
+        }
+        const ugData = await response.json();
+        return ugData;
     } catch (error) {
         console.error('오류:', error);
     }
