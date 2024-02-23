@@ -41,7 +41,6 @@ async function getProjects() {
                 setCesium(selectedPid);
 
                 const ugData = await getUnderground(selectedPid);
-                console.log("지하공동구 정보", JSON.stringify(ugData));
             }
         });
 
@@ -89,7 +88,7 @@ async function setCesium(selectedPid) {
     // 뷰어 초기화
     viewer = new Cesium.Viewer('cesiumContainer', {
         terrain: Cesium.Terrain.fromWorldTerrain(),
-        // infoBox: false
+        infoBox: false
     });
 
     // 지구 투명도 설정
@@ -121,7 +120,6 @@ async function setCesium(selectedPid) {
                 const tileset = await Cesium.Cesium3DTileset.fromUrl(layer.lurl);
                 viewer.scene.primitives.add(tileset);
                 layerTilesetMap[layer.lid] = tileset;
-                console.log(`타일셋 추가 - ${layer.lnm} ${layer.lurl}`);
             } catch (error) {
                 console.error(`타일셋 추가 오류: ${error}`);
             }
@@ -132,20 +130,58 @@ async function setCesium(selectedPid) {
     addLayerEventListeners(layersData, layerTilesetMap);
 
     // 뷰어에 클릭 핸들러 추가
-    addClickHandler(viewer);
+    addClickHandler(viewer, selectedPid);
 
 }
 
 // 뷰어에 클릭 핸들러 추가
-function addClickHandler(viewer) {
+function addClickHandler(viewer, selectedPid) {
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    handler.setInputAction(function onLeftClick(movement) {
+    handler.setInputAction(async function onLeftClick(movement) {
         let pickedFeature = viewer.scene.pick(movement.position);
         if (Cesium.defined(pickedFeature)) {
             const modelid = pickedFeature.getProperty('modelid');
-            console.log('modelid:', modelid);
+            const modelData = await getModel(modelid, selectedPid);
+
+            const mover = document.getElementById('mover');
+
+            mover.style.display = 'block';
+
+            // 말풍선 내용 업데이트
+            updateBalloonContent(modelData);
+
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// 말풍선 내용 업데이트
+function updateBalloonContent(modelData) {
+    const table = document.querySelector('.prop_table');
+    table.innerHTML = '';
+
+    modelData.prop.forEach(property => {
+        const tr = document.createElement('tr');
+        const tdT = document.createElement('td');
+        const tdV = document.createElement('td');
+
+        if (property.PropTitle === 'facil_nm') {
+            if (property.PropValue != null) {
+                const label = document.querySelector('.facil_nm');
+                label.innerHTML = property.PropValue;
+            } else {
+                const label = document.querySelector('.facil_nm');
+                label.innerHTML = '없음'
+            }
+        }
+
+        tdT.innerHTML = `- ${property.PropTitle}`;
+        tdV.innerHTML = property.PropValue;
+
+        tr.appendChild(tdT);
+        tr.appendChild(tdV);
+
+        table.appendChild(tr);
+    });
 }
 
 // 레이어 버튼에 이벤트리스너 추가
@@ -351,7 +387,7 @@ function displayLayers(layersData) {
 }
 
 // 공간객체 물성 정보 조회
-async function getModels(modelid, pid) {
+async function getModel(modelid, pid) {
     let url = `${baseUrl}/models/${modelid}?pid=${pid}&apikey=${apiKey}`;
 
     try {
