@@ -461,6 +461,14 @@ function displayLayers(layersData) {
         viewer = new Cesium.Viewer('cesiumContainer', {
             terrain: Cesium.Terrain.fromWorldTerrain(),
         });
+        // 카메라 이동
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(126.6534215, 37.3707532, 1000.0),
+            orientation: {
+                heading: Cesium.Math.toRadians(0.0),
+                pitch: Cesium.Math.toRadians(-40.0),
+            },
+        });
         const projects = await getProjects();
         console.log(projects);
     } catch (error) {
