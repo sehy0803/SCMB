@@ -162,7 +162,7 @@ async function setCesium(selectedPid, layersData) {
 
     // 카메라 이동
     viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(midpoint[0], midpoint[1] - 0.007, midpoint[2]),
+        destination: Cesium.Cartesian3.fromDegrees(midpoint[0], midpoint[1] - 0.007, midpoint[2] + 600.0),
         orientation: {
             heading: Cesium.Math.toRadians(0.0),
             pitch: Cesium.Math.toRadians(-40.0),
