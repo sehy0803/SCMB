@@ -2,7 +2,9 @@ const apiKey = "bd49048a-6440-4f3b-8fa4-cbdc42986059";
 const baseUrl = "http://220.126.8.143:53332/api/v1"
 Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0MWRlZDViZS1lNjFhLTRkMGUtODVhNC05YThhZWYzYjU5OGEiLCJpZCI6MTk2ODU5LCJpYXQiOjE3MDg0ODg2NzN9.YwZ1O0jamr4Xjgv5FFazklk5EoPRUdOwlPAozSqGuxI';
 let viewer;
-/* 정보 조회 */
+let selectedModel = null;
+
+// ======================== api 호출 ========================
 // 프로젝트 목록 조회
 async function getProjects() {
     let url = `${baseUrl}/projects?apikey=${apiKey}`;
@@ -70,6 +72,64 @@ async function getProject(pid) {
     }
 }
 
+// 레이어 정보 조회
+async function getLayers(pid) {
+    let url = `${baseUrl}/layers?pid=${pid}&apikey=${apiKey}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+        });
+
+        if (!response.ok) {
+            throw new Error(`네트워크 오류: ${response.status}`);
+        }
+        const layersData = await response.json();
+        return layersData;
+    } catch (error) {
+        console.error('오류:', error);
+    }
+}
+
+// 공간객체 물성 정보 조회
+async function getModel(modelid, pid) {
+    let url = `${baseUrl}/models/${modelid}?pid=${pid}&apikey=${apiKey}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+        });
+
+        if (!response.ok) {
+            throw new Error(`네트워크 오류: ${response.status}`);
+        }
+        const modelsData = await response.json();
+        return modelsData;
+    } catch (error) {
+        console.error('오류:', error);
+    }
+}
+
+// 지하공동구 정보 조회
+async function getUnderground(pid) {
+    let url = `${baseUrl}/projects/${pid}/prop?apikey=${apiKey}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+        });
+
+        if (!response.ok) {
+            throw new Error(`네트워크 오류: ${response.status}`);
+        }
+        const ugData = await response.json();
+        return ugData;
+    } catch (error) {
+        console.error('오류:', error);
+    }
+}
+
+// ======================== 함수 ========================
 // 세슘 설정
 async function setCesium(selectedPid) {
     // pbv 값으로 카메라 좌표 설정
@@ -150,8 +210,26 @@ function addClickHandler(viewer, selectedPid) {
             // 말풍선 내용 업데이트
             updateBalloonContent(modelData);
 
+            // 이전에 클릭한 모델의 색상 리셋
+            if (selectedModel) {
+                resetModelColor(selectedModel);
+            }
+
+            // 클릭한 모델의 색상 변경
+            changeModelColor(pickedFeature);
+            selectedModel = pickedFeature;
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// 클릭한 모델의 색상 변경
+function changeModelColor(pickedFeature) {
+    pickedFeature.color = Cesium.Color.BLUE;
+}
+
+// 이전에 클릭한 모델의 색상 리셋
+function resetModelColor(model) {
+    model.color = Cesium.Color.WHITE;
 }
 
 // 말풍선 내용 업데이트
@@ -274,25 +352,6 @@ function parseLineStringZ(lineStringZ) {
     return coordinates;
 }
 
-// 레이어 정보 조회
-async function getLayers(pid) {
-    let url = `${baseUrl}/layers?pid=${pid}&apikey=${apiKey}`;
-
-    try {
-        const response = await fetch(url, {
-            method: "GET",
-        });
-
-        if (!response.ok) {
-            throw new Error(`네트워크 오류: ${response.status}`);
-        }
-        const layersData = await response.json();
-        return layersData;
-    } catch (error) {
-        console.error('오류:', error);
-    }
-}
-
 // 레이어 목록을 화면에 표시
 function displayLayers(layersData) {
     const layer_container = document.querySelector('.layer_container');
@@ -386,43 +445,7 @@ function displayLayers(layersData) {
     });
 }
 
-// 공간객체 물성 정보 조회
-async function getModel(modelid, pid) {
-    let url = `${baseUrl}/models/${modelid}?pid=${pid}&apikey=${apiKey}`;
 
-    try {
-        const response = await fetch(url, {
-            method: "GET",
-        });
-
-        if (!response.ok) {
-            throw new Error(`네트워크 오류: ${response.status}`);
-        }
-        const modelsData = await response.json();
-        return modelsData;
-    } catch (error) {
-        console.error('오류:', error);
-    }
-}
-
-// 지하공동구 정보 조회
-async function getUnderground(pid) {
-    let url = `${baseUrl}/projects/${pid}/prop?apikey=${apiKey}`;
-
-    try {
-        const response = await fetch(url, {
-            method: "GET",
-        });
-
-        if (!response.ok) {
-            throw new Error(`네트워크 오류: ${response.status}`);
-        }
-        const ugData = await response.json();
-        return ugData;
-    } catch (error) {
-        console.error('오류:', error);
-    }
-}
 
 // 최상위 실행
 (async () => {
