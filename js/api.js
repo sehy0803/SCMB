@@ -463,10 +463,10 @@ function displayLayers(layersData) {
         });
         // 카메라 이동
         viewer.camera.setView({
-            destination: Cesium.Cartesian3.fromDegrees(127, 32, 1000000.0),
+            destination: Cesium.Cartesian3.fromDegrees(127, 31, 1600000.0),
             orientation: {
                 heading: Cesium.Math.toRadians(0.0),
-                pitch: Cesium.Math.toRadians(-60.0),
+                pitch: Cesium.Math.toRadians(-70.0),
             },
         });
         const projects = await getProjects();
