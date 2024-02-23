@@ -98,16 +98,16 @@ async function setCesium(selectedPid) {
     globe.translucency.frontFaceAlphaByDistance = new Cesium.NearFarScalar(
         0.0, // 투명화가 시작될 최소 거리
         0.0, // 투명화가 시작될 최소 거리에서의 투명도
-        6000.0, // 투명화가 종료될 최대 거리
+        10000.0, // 투명화가 종료될 최대 거리
         1.0 // 투명화가 종료될 최대 거리에서의 투명도
     );
 
     // 카메라 이동
     viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(...midpoint),
+        destination: Cesium.Cartesian3.fromDegrees(midpoint[0], midpoint[1] - 0.007, midpoint[2] + 600.0),
         orientation: {
             heading: Cesium.Math.toRadians(0.0),
-            pitch: Cesium.Math.toRadians(-15.0),
+            pitch: Cesium.Math.toRadians(-40.0),
         },
     });
 
