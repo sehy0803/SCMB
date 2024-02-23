@@ -40,9 +40,7 @@ async function getProjects() {
                 displayLayers(layersData);
 
                 // 지도 생성
-                setCesium(selectedPid);
-
-                const ugData = await getUnderground(selectedPid);
+                setCesium(selectedPid, layersData);
             }
         });
 
@@ -131,7 +129,7 @@ async function getUnderground(pid) {
 
 // ======================== 함수 ========================
 // 세슘 설정
-async function setCesium(selectedPid) {
+async function setCesium(selectedPid, layersData) {
     // pbv 값으로 카메라 좌표 설정
     const projectData = await getProject(selectedPid);
     const lineStringZ = projectData.pbv;
@@ -164,15 +162,17 @@ async function setCesium(selectedPid) {
 
     // 카메라 이동
     viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(midpoint[0], midpoint[1] - 0.007, midpoint[2] + 600.0),
+        destination: Cesium.Cartesian3.fromDegrees(midpoint[0], midpoint[1] - 0.007, midpoint[2]),
         orientation: {
             heading: Cesium.Math.toRadians(0.0),
             pitch: Cesium.Math.toRadians(-40.0),
         },
+        height: 1000.0,
     });
+    // 지구 표면 간의 충돌 감지 비활성화(지형 통과 허용)
+    viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
 
     // 타일셋 추가
-    const layersData = await getLayers(selectedPid);
     const layerTilesetMap = {};
     for (const layer of layersData) {
         if (layer.llv === 2) {
