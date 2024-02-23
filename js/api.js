@@ -205,19 +205,26 @@ function addClickHandler(viewer, selectedPid) {
 
             const mover = document.getElementById('mover');
 
-            mover.style.display = 'block';
-
-            // 말풍선 내용 업데이트
-            updateBalloonContent(modelData);
-
-            // 이전에 클릭한 모델의 색상 리셋
-            if (selectedModel) {
+            // 이미 클릭했던 모델을 다시 클릭할 시
+            if (pickedFeature === selectedModel) {
+                mover.style.display = 'none';
                 resetModelColor(selectedModel);
-            }
+                selectedModel = null;
+            } else {
+                mover.style.display = 'block';
 
-            // 클릭한 모델의 색상 변경
-            changeModelColor(pickedFeature);
-            selectedModel = pickedFeature;
+                // 말풍선 내용 업데이트
+                updateBalloonContent(modelData);
+
+                // 이전에 클릭한 모델의 색상 리셋
+                if (selectedModel) {
+                    resetModelColor(selectedModel);
+                }
+
+                // 클릭한 모델의 색상 변경
+                changeModelColor(pickedFeature);
+                selectedModel = pickedFeature;
+            }
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 }
